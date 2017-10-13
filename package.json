@@ -1,0 +1,15 @@
+{
+  "name": "nanohasim",
+  "version": "1.0.0",
+  "description": "A JavaScript simulator for the old ISA.",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "uhyo",
+  "license": "MIT",
+  "dependencies": {
+    "@types/node": "^8.0.34",
+    "typescript": "^2.5.3"
+  }
+}
