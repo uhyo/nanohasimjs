@@ -70,17 +70,20 @@ function mainLoop(state: State): void{
     const start = 0;
     const end = 1e20;
     const step = 1e8;
+    let counter = total % step;
 
     whileloop: while(true){
         const inst = memory[pc];
         // 上位6bitがopcode
         const opcode = inst >>> 26;
-        if (start <= total && total % step === 0){
+        if (start <= total && counter === step){
+            counter = 0;
             console.error(`${total}: ${pc}`);
             if (total >= end){
                 process.exit(0);
             }
         }
+        counter++;
         total++;
         // console.error(`${total} ${pc}: ${instName(opcode)} ${showInst(inst)}`);
         switch (opcode){
