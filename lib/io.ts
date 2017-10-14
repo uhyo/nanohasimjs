@@ -38,6 +38,7 @@ export class StdinBuf{
      */
     readByte(): number | null {
         const len = this.bufs.length;
+        // console.error('arridx', this.arridx, 'len', len, 'bufidx', this.bufidx);
         while (this.arridx < len){
             const buf = this.bufs[this.arridx];
             if (this.bufidx < buf.length){
@@ -60,8 +61,9 @@ export class StdinBuf{
         return new Promise((fulfill, reject)=>{
             if (this.bufidx < this.bufs.length){
                 // あれ、ある
-                console.warn('not waiting');
-                fulfill();
+                throw new Error('not waiting');
+
+                // fulfill();
             } else {
                 this.callback = fulfill;
             }
