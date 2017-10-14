@@ -72,6 +72,36 @@ function mainLoop(state: State): void{
     const step = 1e8;
     let counter = total % step;
 
+    // opに使う関数たち
+    const ops = {
+        add(x: number, y: number){ return x+y; },
+        sub(x: number, y: number){ return y-x; },
+        mul(x: number, y: number){ return x*y; },
+        rshift(x: number, y: number){
+            if (y >= 0){
+                return x >>> (y & 0x1f);
+            } else {
+                return x << ((-y) & 0x1f);
+            }
+        },
+        lshift(x: number, y: number){
+            if (y >= 0){
+                return x << (y & 0x1f);
+            } else {
+                return x >>> ((-y) & 0x1f);
+            }
+        },
+        eq(x: number, y: number){
+            return x===y ? 1 : 0;
+        },
+        gt(x: number, y: number){
+            return x > y ? 1 : 0;
+        },
+        lt(x: number, y: number){
+            return x < y ? 1 : 0;
+        },
+    };
+
     whileloop: while(true){
         const inst = memory[pc];
         // 上位6bitがopcode
@@ -89,91 +119,67 @@ function mainLoop(state: State): void{
         switch (opcode){
             case 0b000000:
                 // add
-                op(inst, registers, (x, y)=>x+y);
+                op(inst, registers, ops.add);
                 break;
             case 0b000001:
                 // addi
-                opi(inst, registers, (x, y)=>x+y);
+                opi(inst, registers, ops.add);
                 break;
             case 0b000010:
                 // sub
-                op(inst, registers, (x, y)=>y-x);
+                op(inst, registers, ops.sub);
                 break;
             case 0b000011:
                 // subi
-                opi(inst, registers, (x, y)=>y-x);
+                opi(inst, registers, ops.sub);
                 break;
             case 0b000100:
                 // rshift
-                op(inst, registers, (x, y)=>{
-                    if (y >= 0){
-                        return x >>> (y & 0x1f);
-                    } else {
-                        return x << ((-y) & 0x1f);
-                    }
-                });
+                op(inst, registers, ops.rshift);
                 break;
             case 0b000101:
                 // rshifti
-                opi(inst, registers, (x, y)=>{
-                    if (y >= 0){
-                        return x >>> (y & 0x1f);
-                    } else {
-                        return x << ((-y) & 0x1f);
-                    }
-                });
+                opi(inst, registers, ops.rshift);
                 break;
             case 0b000110:
                 // lshift
-                op(inst, registers, (x, y)=>{
-                    if (y >= 0){
-                        return x << (y & 0x1f);
-                    } else {
-                        return x >>> ((-y) & 0x1f);
-                    }
-                });
+                op(inst, registers, ops.lshift);
                 break;
             case 0b000111:
                 // lshifti
-                opi(inst, registers, (x, y)=>{
-                    if (y >= 0){
-                        return x << (y & 0x1f);
-                    } else {
-                        return x >>> ((-y) & 0x1f);
-                    }
-                });
+                opi(inst, registers, ops.lshift);
                 break;
             case 0b001000:
                 // cmpeq
-                op(inst, registers, (x, y)=> x===y ? 1 : 0);
+                op(inst, registers, ops.eq);
                 break;
             case 0b001001:
                 // cmpeqi
-                opi(inst, registers, (x, y)=> x===y ? 1 : 0);
+                opi(inst, registers, ops.eq);
                 break;
             case 0b001010:
                 // cmpgt
-                op(inst, registers, (x, y)=> x>y ? 1 : 0);
+                op(inst, registers, ops.gt);
                 break;
             case 0b001011:
                 // cmpgti
-                opi(inst, registers, (x, y)=> x>y ? 1 : 0);
+                opi(inst, registers, ops.gt);
                 break;
             case 0b001100:
                 // cmplt
-                op(inst, registers, (x, y)=> x<y ? 1 : 0);
+                op(inst, registers, ops.lt);
                 break;
             case 0b001101:
                 // cmplti
-                opi(inst, registers, (x, y)=> x<y ? 1 : 0);
+                opi(inst, registers, ops.lt);
                 break;
             case 0b001110:
                 // cmpfeq
-                opf(inst, registers, (x, y)=> x===y ? 1 : 0);
+                opf(inst, registers, ops.eq);
                 break;
             case 0b010000:
                 // cmpfgt
-                opf(inst, registers, (x, y)=> x > y ? 1 : 0);
+                opf(inst, registers, ops.gt);
                 break;
             case 0b010011: {
                 // fneg
@@ -209,32 +215,32 @@ function mainLoop(state: State): void{
             }
             case 0b011000: {
                 // fadd
-                opf(inst, registers, (x, y)=> x+y);
+                opf(inst, registers, ops.add);
                 break;
             }
             case 0b011001: {
                 // faddi
-                opif(inst, registers, (x, y)=> x+y);
+                opif(inst, registers, ops.add);
                 break;
             }
             case 0b011010: {
                 // fsub
-                opf(inst, registers, (x, y)=> y-x);
+                opf(inst, registers, ops.sub);
                 break;
             }
             case 0b011011: {
                 // fsubi
-                opif(inst, registers, (x, y)=> y-x);
+                opif(inst, registers, ops.sub);
                 break;
             }
             case 0b011100: {
                 // fmul
-                opf(inst, registers, (x, y)=> x*y);
+                opf(inst, registers, ops.mul);
                 break;
             }
             case 0b011101: {
                 // fmuli
-                opif(inst, registers, (x, y)=> x*y);
+                opif(inst, registers, ops.mul);
                 break;
             }
             case 0b011110: {
