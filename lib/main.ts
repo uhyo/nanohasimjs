@@ -117,6 +117,7 @@ function mainLoop(state: State): void{
         counter++;
         total++;
         // console.error(`${total} ${pc}: ${instName(opcode)} ${showInst(inst)}`);
+        registers.buf[0] = 0;
         switch (opcode){
             case 0b000000: {
                 // add
@@ -124,7 +125,8 @@ function mainLoop(state: State): void{
                 const p = (inst >>> 20) & 0b111111;
                 const q = (inst >>> 14) & 0b111111;
                 const r = (inst >>> 8) & 0b111111;
-                registers.set(p, registers.get(q) + registers.get(r));
+                // registers.set(p, registers.get(q) + registers.get(r));
+                registers.buf[p] = registers.buf[q] + registers.buf[r];
                 break;
             }
             case 0b000001: {
@@ -136,77 +138,166 @@ function mainLoop(state: State): void{
                 if ((imm & 0x2000) === 0x2000){
                     imm |= 0xffffc000;
                 }
-                registers.set(p, registers.get(q) + imm);
+                // registers.set(p, registers.get(q) + imm);
+                registers.buf[p] = registers.buf[q] + imm;
                 break;
             }
-            case 0b000010:
+            case 0b000010: {
                 // sub
-                op(inst, registers, opsub);
+                const p = (inst >>> 20) & 0b111111;
+                const q = (inst >>> 14) & 0b111111;
+                const r = (inst >>> 8) & 0b111111;
+                registers.buf[p] = registers.buf[r] - registers.buf[q];
                 break;
-            case 0b000011:
+            }
+            case 0b000011: {
                 // subi
-                opi(inst, registers, opsub);
+                // opi(inst, registers, opsub);
+                const p = (inst >>> 20) & 0b111111;
+                const q = (inst >>> 14) & 0b111111;
+                let imm = inst & 0x3fff;
+                if ((imm & 0x2000) === 0x2000){
+                    imm |= 0xffffc000;
+                }
+                registers.buf[p] = imm - registers.buf[q];
                 break;
-            case 0b000100:
+            }
+            case 0b000100: {
                 // rshift
-                op(inst, registers, ops.rshift);
+                // op(inst, registers, ops.rshift);
+                const p = (inst >>> 20) & 0b111111;
+                const q = (inst >>> 14) & 0b111111;
+                const r = (inst >>> 8) & 0b111111;
+                registers.buf[p] = ops.rshift(registers.buf[q], registers.buf[r]);
                 break;
-            case 0b000101:
+            }
+            case 0b000101: {
                 // rshifti
-                opi(inst, registers, ops.rshift);
+                // opi(inst, registers, ops.rshift);
+                const p = (inst >>> 20) & 0b111111;
+                const q = (inst >>> 14) & 0b111111;
+                let imm = inst & 0x3fff;
+                if ((imm & 0x2000) === 0x2000){
+                    imm |= 0xffffc000;
+                }
+                registers.buf[p] = ops.rshift(registers.buf[q], imm);
                 break;
-            case 0b000110:
+            }
+            case 0b000110: {
                 // lshift
-                op(inst, registers, ops.lshift);
+                // op(inst, registers, ops.lshift);
+                const p = (inst >>> 20) & 0b111111;
+                const q = (inst >>> 14) & 0b111111;
+                const r = (inst >>> 8) & 0b111111;
+                registers.buf[p] = ops.lshift(registers.buf[q], registers.buf[r]);
                 break;
-            case 0b000111:
+            }
+            case 0b000111: {
                 // lshifti
-                opi(inst, registers, ops.lshift);
+                // opi(inst, registers, ops.lshift);
+                const p = (inst >>> 20) & 0b111111;
+                const q = (inst >>> 14) & 0b111111;
+                let imm = inst & 0x3fff;
+                if ((imm & 0x2000) === 0x2000){
+                    imm |= 0xffffc000;
+                }
+                registers.buf[p] = ops.lshift(registers.buf[q], imm);
                 break;
-            case 0b001000:
+            }
+            case 0b001000: {
                 // cmpeq
-                op(inst, registers, ops.eq);
+                // op(inst, registers, ops.eq);
+                const p = (inst >>> 20) & 0b111111;
+                const q = (inst >>> 14) & 0b111111;
+                const r = (inst >>> 8) & 0b111111;
+                registers.buf[p] = registers.buf[q] === registers.buf[r] ? 1 : 0;
                 break;
-            case 0b001001:
+            }
+            case 0b001001: {
                 // cmpeqi
-                opi(inst, registers, ops.eq);
+                // opi(inst, registers, ops.eq);
+                const p = (inst >>> 20) & 0b111111;
+                const q = (inst >>> 14) & 0b111111;
+                let imm = inst & 0x3fff;
+                if ((imm & 0x2000) === 0x2000){
+                    imm |= 0xffffc000;
+                }
+                registers.buf[p] = registers.buf[q] === imm ? 1 : 0;
                 break;
-            case 0b001010:
+            }
+            case 0b001010: {
                 // cmpgt
-                op(inst, registers, ops.gt);
+                // op(inst, registers, ops.gt);
+                const p = (inst >>> 20) & 0b111111;
+                const q = (inst >>> 14) & 0b111111;
+                const r = (inst >>> 8) & 0b111111;
+                registers.buf[p] = registers.buf[q] > registers.buf[r] ? 1 : 0;
                 break;
-            case 0b001011:
+            }
+            case 0b001011: {
                 // cmpgti
-                opi(inst, registers, ops.gt);
+                // opi(inst, registers, ops.gt);
+                const p = (inst >>> 20) & 0b111111;
+                const q = (inst >>> 14) & 0b111111;
+                let imm = inst & 0x3fff;
+                if ((imm & 0x2000) === 0x2000){
+                    imm |= 0xffffc000;
+                }
+                registers.buf[p] = registers.buf[q] > imm ? 1 : 0;
                 break;
-            case 0b001100:
+            }
+            case 0b001100: {
                 // cmplt
-                op(inst, registers, ops.lt);
+                // op(inst, registers, ops.lt);
+                const p = (inst >>> 20) & 0b111111;
+                const q = (inst >>> 14) & 0b111111;
+                const r = (inst >>> 8) & 0b111111;
+                registers.buf[p] = registers.buf[q] < registers.buf[r] ? 1 : 0;
                 break;
+            }
             case 0b001101:
                 // cmplti
-                opi(inst, registers, ops.lt);
+                // opi(inst, registers, ops.lt);
+                const p = (inst >>> 20) & 0b111111;
+                const q = (inst >>> 14) & 0b111111;
+                let imm = inst & 0x3fff;
+                if ((imm & 0x2000) === 0x2000){
+                    imm |= 0xffffc000;
+                }
+                registers.buf[p] = registers.buf[q] < imm ? 1 : 0;
                 break;
-            case 0b001110:
+            case 0b001110: {
                 // cmpfeq
-                opf(inst, registers, ops.eq);
+                // opf(inst, registers, ops.eq);
+                const p = (inst >>> 20) & 0b111111;
+                const q = (inst >>> 14) & 0b111111;
+                const r = (inst >>> 8) & 0b111111;
+                registers.buf_float[p] = registers.buf_float[q] === registers.buf_float[r] ? 1 : 0;
                 break;
-            case 0b010000:
+            }
+            case 0b010000: {
                 // cmpfgt
-                opf(inst, registers, ops.gt);
+                // opf(inst, registers, ops.gt);
+                const p = (inst >>> 20) & 0b111111;
+                const q = (inst >>> 14) & 0b111111;
+                const r = (inst >>> 8) & 0b111111;
+                registers.buf_float[p] = registers.buf_float[q] > registers.buf_float[r] ? 1 : 0;
                 break;
+            }
             case 0b010011: {
                 // fneg
                 const p = (inst >>> 20) & 0b111111;
                 const q = (inst >>> 14) & 0b111111;
-                registers.setf(p, -registers.getf(q));
+                // registers.setf(p, -registers.getf(q));
+                registers.buf_float[p] = -registers.buf_float[q];
                 break;
             }
             case 0b010101: {
                 // fabs
                 const p = (inst >>> 20) & 0b111111;
                 const q = (inst >>> 14) & 0b111111;
-                registers.setf(p, Math.abs(registers.getf(q)));
+                // registers.setf(p, Math.abs(registers.getf(q)));
+                registers.buf_float[p] = Math.abs(registers.buf_float[q]);
                 break;
             }
             case 0b010110: {
@@ -217,65 +308,94 @@ function mainLoop(state: State): void{
                 if ((imm & 0x80000) === 0x80000){
                     imm |= 0xfff00000;
                 }
-                registers.set(p, imm);
+                // registers.set(p, imm);
+                registers.buf[p] = imm;
                 break;
             }
             case 0b010111: {
                 // movhiz
                 const p = (inst >>> 20) & 0b111111;
                 const imm = (inst & 0xfffff) << 12;
-                registers.set(p, imm);
+                // registers.set(p, imm);
+                registers.buf[p] = imm;
                 break;
             }
             case 0b011000: {
                 // fadd
-                opf(inst, registers, ops.add);
+                // opf(inst, registers, ops.add);
+                const p = (inst >>> 20) & 0b111111;
+                const q = (inst >>> 14) & 0b111111;
+                const r = (inst >>> 8) & 0b111111;
+                registers.buf_float[p] = registers.buf_float[q] + registers.buf_float[r];
                 break;
             }
             case 0b011001: {
                 // faddi
-                opif(inst, registers, ops.add);
+                // opif(inst, registers, ops.add);
+                const p = (inst >>> 20) & 0b111111;
+                const q = (inst >>> 14) & 0b111111;
+                const imm = (inst & 0x3fff) << 18;
+                registers.buf_float[p] = registers.buf_float[q] + bytesFloat(imm);
                 break;
             }
             case 0b011010: {
                 // fsub
-                opf(inst, registers, ops.sub);
+                // opf(inst, registers, ops.sub);
+                const p = (inst >>> 20) & 0b111111;
+                const q = (inst >>> 14) & 0b111111;
+                const r = (inst >>> 8) & 0b111111;
+                registers.buf_float[p] = registers.buf_float[r] - registers.buf_float[q];
                 break;
             }
             case 0b011011: {
                 // fsubi
-                opif(inst, registers, ops.sub);
+                // opif(inst, registers, ops.sub);
+                const p = (inst >>> 20) & 0b111111;
+                const q = (inst >>> 14) & 0b111111;
+                const imm = (inst & 0x3fff) << 18;
+                registers.buf_float[p] = bytesFloat(imm) - registers.buf_float[q];
                 break;
             }
             case 0b011100: {
                 // fmul
-                opf(inst, registers, ops.mul);
+                // opf(inst, registers, ops.mul);
+                const p = (inst >>> 20) & 0b111111;
+                const q = (inst >>> 14) & 0b111111;
+                const r = (inst >>> 8) & 0b111111;
+                registers.buf_float[p] = registers.buf_float[q] * registers.buf_float[r];
                 break;
             }
             case 0b011101: {
                 // fmuli
-                opif(inst, registers, ops.mul);
+                // opif(inst, registers, ops.mul);
+                const p = (inst >>> 20) & 0b111111;
+                const q = (inst >>> 14) & 0b111111;
+                const imm = (inst & 0x3fff) << 18;
+                registers.buf_float[p] = registers.buf_float[q] * bytesFloat(imm);
                 break;
             }
             case 0b011110: {
                 // finv
                 const p = (inst >>> 20) & 0b111111;
                 const q = (inst >>> 14) & 0b111111;
-                registers.setf(p, 1 / registers.getf(q));
+                // registers.setf(p, 1 / registers.getf(q));
+                registers.buf_float[p] = 1 / registers.buf_float[q];
                 break;
             }
             case 0b011111: {
                 // fsqrt
                 const p = (inst >>> 20) & 0b111111;
                 const q = (inst >>> 14) & 0b111111;
-                registers.setf(p, Math.sqrt(registers.getf(q)));
+                // registers.setf(p, Math.sqrt(registers.getf(q)));
+                registers.buf_float[p] = Math.sqrt(registers.buf_float[q]);
                 break;
             }
             case 0b100000: {
                 // ldi
                 const p = (inst >>> 20) & 0b111111;
                 const imm = inst & 0xfffff;
-                registers.set(p, memory[imm]);
+                // registers.set(p, memory[imm]);
+                registers.buf[p] = memory[imm];
                 break;
             }
             case 0b100001: {
@@ -287,15 +407,18 @@ function mainLoop(state: State): void{
                 if ((imm & 0x2000) === 0x2000){
                     imm |= 0xffffc000;
                 }
-                const addr = (registers.get(q) + imm) & 0xfffff;
-                registers.set(p, memory[addr]);
+                // const addr = (registers.get(q) + imm) & 0xfffff;
+                const addr = (registers.buf[q] + imm) & 0xfffff;
+                // registers.set(p, memory[addr]);
+                registers.buf[p] = memory[addr];
                 break;
             }
             case 0b100100: {
                 // stoi
                 const p = (inst >>> 20) & 0b111111;
                 const imm = inst & 0xfffff;
-                memory[imm] = registers.get(p);
+                // memory[imm] = registers.get(p);
+                memory[imm] = registers.buf[p];
                 break;
             }
             case 0b100101: {
@@ -307,16 +430,24 @@ function mainLoop(state: State): void{
                 if ((imm & 0x2000) === 0x2000){
                     imm |= 0xffffc000;
                 }
-                const addr = (registers.get(q) + imm) & 0xfffff;
-                memory[addr] = registers.get(p);
+                // const addr = (registers.get(q) + imm) & 0xfffff;
+                const addr = (registers.buf[q] + imm) & 0xfffff;
+                // memory[addr] = registers.get(p);
+                memory[addr] = registers.buf[p];
                 break;
             }
             case 0b110000: {
                 // jmpz
                 const p = (inst >>> 20) & 0b111111;
                 const q = (inst >>> 14) & 0b111111;
+                /*
                 if (registers.get(p) === 0){
                     pc = registers.get(q);
+                    continue whileloop;
+                }
+                */
+                if (registers.buf[p] === 0){
+                    pc = registers.buf[q];
                     continue whileloop;
                 }
                 break;
@@ -325,7 +456,13 @@ function mainLoop(state: State): void{
                 // jmpzi
                 const p = (inst >>> 20) & 0b111111;
                 const imm = inst & 0xfffff;
+                /*
                 if (registers.get(p) === 0){
+                    pc = imm;
+                    continue whileloop;
+                }
+                */
+                if (registers.buf[p] === 0){
                     pc = imm;
                     continue whileloop;
                 }
@@ -335,8 +472,14 @@ function mainLoop(state: State): void{
                 // jmp
                 const p = (inst >>> 20) & 0b111111;
                 const q = (inst >>> 14) & 0b111111;
+                /*
                 if (registers.get(p) !== 0){
                     pc = registers.get(q);
+                    continue whileloop;
+                }
+                */
+                if (registers.buf[p] !== 0){
+                    pc = registers.buf[q];
                     continue whileloop;
                 }
                 break;
@@ -345,7 +488,13 @@ function mainLoop(state: State): void{
                 // jmpi
                 const p = (inst >>> 20) & 0b111111;
                 const imm = inst & 0xfffff;
+                /*
                 if (registers.get(p) !== 0){
+                    pc = imm;
+                    continue whileloop;
+                }
+                */
+                if (registers.buf[p] !== 0){
                     pc = imm;
                     continue whileloop;
                 }
@@ -355,14 +504,16 @@ function mainLoop(state: State): void{
                 // call
                 const p = (inst >>> 20) & 0b111111;
                 const imm = inst & 0x3fff;
-                registers.set(p, pc+1);
+                // registers.set(p, pc+1);
+                registers.buf[p] = pc+1;
                 pc = imm;
                 continue whileloop;
             }
             case 0b111100: {
                 // out
                 const p = (inst >>> 20) & 0b111111;
-                process.stdout.write(String.fromCharCode(registers.get(p) & 0xff));
+                // process.stdout.write(String.fromCharCode(registers.get(p) & 0xff));
+                process.stdout.write(String.fromCharCode(registers.buf[p] & 0xff));
                 break;
             }
             case 0b111101: {
@@ -374,7 +525,8 @@ function mainLoop(state: State): void{
                     break whileloop;
                 }
                 const p = (inst >>> 20) & 0b111111;
-                registers.set(p, val);
+                // registers.set(p, val);
+                registers.buf[p] = val;
                 break;
             }
             case 0b111111: {
