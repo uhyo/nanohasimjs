@@ -2,9 +2,6 @@ import {
     Registers,
 } from './registers';
 import {
-    bytesFloat,
-} from './float';
-import {
     StdinBuf,
 } from './io';
 import {
@@ -72,11 +69,7 @@ function mainLoop(state: State): void{
     const step = 1e8;
     let counter = total % step;
 
-    // opに使う関数たち
     const ops = {
-        add(x: number, y: number){ return x+y; },
-        sub(x: number, y: number){ return y-x; },
-        mul(x: number, y: number){ return x*y; },
         rshift(x: number, y: number){
             if (y >= 0){
                 return x >>> (y & 0x1f);
@@ -91,17 +84,10 @@ function mainLoop(state: State): void{
                 return x >>> ((-y) & 0x1f);
             }
         },
-        eq(x: number, y: number){
-            return x===y ? 1 : 0;
-        },
-        gt(x: number, y: number){
-            return x > y ? 1 : 0;
-        },
-        lt(x: number, y: number){
-            return x < y ? 1 : 0;
-        },
     };
-    function opsub(x: number, y: number){ return y-x; }
+    // 即値変換用
+    const immbuf = new Int32Array(1);
+    const immfloatbuf = new Float32Array(immbuf.buffer);
 
     whileloop: while(true){
         const inst = memory[pc];
@@ -335,7 +321,8 @@ function mainLoop(state: State): void{
                 const p = (inst >>> 20) & 0b111111;
                 const q = (inst >>> 14) & 0b111111;
                 const imm = (inst & 0x3fff) << 18;
-                registers.buf_float[p] = registers.buf_float[q] + bytesFloat(imm);
+                immbuf[0] = imm;
+                registers.buf_float[p] = registers.buf_float[q] + immfloatbuf[0];
                 break;
             }
             case 0b011010: {
@@ -353,7 +340,8 @@ function mainLoop(state: State): void{
                 const p = (inst >>> 20) & 0b111111;
                 const q = (inst >>> 14) & 0b111111;
                 const imm = (inst & 0x3fff) << 18;
-                registers.buf_float[p] = bytesFloat(imm) - registers.buf_float[q];
+                immbuf[0] = imm;
+                registers.buf_float[p] = immfloatbuf[0] - registers.buf_float[q];
                 break;
             }
             case 0b011100: {
@@ -371,7 +359,8 @@ function mainLoop(state: State): void{
                 const p = (inst >>> 20) & 0b111111;
                 const q = (inst >>> 14) & 0b111111;
                 const imm = (inst & 0x3fff) << 18;
-                registers.buf_float[p] = registers.buf_float[q] * bytesFloat(imm);
+                immbuf[0] = imm;
+                registers.buf_float[p] = registers.buf_float[q] * immfloatbuf[0];
                 break;
             }
             case 0b011110: {
@@ -546,6 +535,7 @@ pc: ${pc}`);
     state.total = total;
 }
 
+/*
 // perform an ALU operation.
 function op(inst: number, registers: Registers, func: (x: number, y: number)=>number): void{
     // 目的のレジスタ
@@ -588,6 +578,7 @@ function opif(inst: number, registers: Registers, func: (x: number, y: number)=>
 
     registers.setf(p, func(registers.getf(q), bytesFloat(imm)));
 }
+*/
 
 // Init a register.
 function initRegisters(): Registers{
