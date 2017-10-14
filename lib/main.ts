@@ -101,6 +101,7 @@ function mainLoop(state: State): void{
             return x < y ? 1 : 0;
         },
     };
+    function opsub(x: number, y: number){ return y-x; }
 
     whileloop: while(true){
         const inst = memory[pc];
@@ -117,21 +118,34 @@ function mainLoop(state: State): void{
         total++;
         // console.error(`${total} ${pc}: ${instName(opcode)} ${showInst(inst)}`);
         switch (opcode){
-            case 0b000000:
+            case 0b000000: {
                 // add
-                op(inst, registers, ops.add);
+                // op(inst, registers, ops.add);
+                const p = (inst >>> 20) & 0b111111;
+                const q = (inst >>> 14) & 0b111111;
+                const r = (inst >>> 8) & 0b111111;
+                registers.set(p, registers.get(q) + registers.get(r));
                 break;
-            case 0b000001:
+            }
+            case 0b000001: {
                 // addi
-                opi(inst, registers, ops.add);
+                // opi(inst, registers, ops.add);
+                const p = (inst >>> 20) & 0b111111;
+                const q = (inst >>> 14) & 0b111111;
+                let imm = inst & 0x3fff;
+                if ((imm & 0x2000) === 0x2000){
+                    imm |= 0xffffc000;
+                }
+                registers.set(p, registers.get(q) + imm);
                 break;
+            }
             case 0b000010:
                 // sub
-                op(inst, registers, ops.sub);
+                op(inst, registers, opsub);
                 break;
             case 0b000011:
                 // subi
-                opi(inst, registers, ops.sub);
+                opi(inst, registers, opsub);
                 break;
             case 0b000100:
                 // rshift
