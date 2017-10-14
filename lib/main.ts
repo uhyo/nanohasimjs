@@ -3,14 +3,6 @@ import {
 } from './registers';
 import {
     bytesFloat,
-    floatBytes,
-    fneg,
-    fabs,
-    fadd,
-    fsub,
-    fmul,
-    finv,
-    fsqrt,
 } from './float';
 import {
     StdinBuf,
@@ -174,24 +166,24 @@ function mainLoop(state: State): void{
                 break;
             case 0b001110:
                 // cmpfeq
-                op(inst, registers, (x, y)=> bytesFloat(x) === bytesFloat(y) ? 1 : 0);
+                opf(inst, registers, (x, y)=> x===y ? 1 : 0);
                 break;
             case 0b010000:
                 // cmpfgt
-                op(inst, registers, (x, y)=> bytesFloat(x) > bytesFloat(y) ? 1 : 0);
+                opf(inst, registers, (x, y)=> x > y ? 1 : 0);
                 break;
             case 0b010011: {
                 // fneg
                 const p = (inst >>> 20) & 0b111111;
                 const q = (inst >>> 14) & 0b111111;
-                registers.set(p, fneg(registers.get(q)));
+                registers.setf(p, -registers.getf(q));
                 break;
             }
             case 0b010101: {
                 // fabs
                 const p = (inst >>> 20) & 0b111111;
                 const q = (inst >>> 14) & 0b111111;
-                registers.set(p, fabs(registers.get(q)));
+                registers.setf(p, Math.abs(registers.getf(q)));
                 break;
             }
             case 0b010110: {
@@ -214,46 +206,46 @@ function mainLoop(state: State): void{
             }
             case 0b011000: {
                 // fadd
-                op(inst, registers, (x, y)=> fadd(x, y));
+                opf(inst, registers, (x, y)=> x+y);
                 break;
             }
             case 0b011001: {
                 // faddi
-                opif(inst, registers, (x, y)=> fadd(x, y));
+                opif(inst, registers, (x, y)=> x+y);
                 break;
             }
             case 0b011010: {
                 // fsub
-                op(inst, registers, (x, y)=> fsub(y, x));
+                opf(inst, registers, (x, y)=> y-x);
                 break;
             }
             case 0b011011: {
                 // fsubi
-                opif(inst, registers, (x, y)=> fsub(y, x));
+                opif(inst, registers, (x, y)=> y-x);
                 break;
             }
             case 0b011100: {
                 // fmul
-                op(inst, registers, (x, y)=> fmul(x, y));
+                opf(inst, registers, (x, y)=> x*y);
                 break;
             }
             case 0b011101: {
                 // fmuli
-                opif(inst, registers, (x, y)=> fmul(x, y));
+                opif(inst, registers, (x, y)=> x*y);
                 break;
             }
             case 0b011110: {
                 // finv
                 const p = (inst >>> 20) & 0b111111;
                 const q = (inst >>> 14) & 0b111111;
-                registers.set(p, finv(registers.get(q)));
+                registers.setf(p, 1 / registers.getf(q));
                 break;
             }
             case 0b011111: {
                 // fsqrt
                 const p = (inst >>> 20) & 0b111111;
                 const q = (inst >>> 14) & 0b111111;
-                registers.set(p, fsqrt(registers.get(q)));
+                registers.setf(p, Math.sqrt(registers.getf(q)));
                 break;
             }
             case 0b100000: {
@@ -402,13 +394,24 @@ function opi(inst: number, registers: Registers, func: (x: number, y: number)=>n
 
     registers.set(p, func(registers.get(q), imm));
 }
+// FPU
+function opf(inst: number, registers: Registers, func: (x: number, y: number)=>number): void{
+    // 目的のレジスタ
+    const p = (inst >>> 20) & 0b111111;
+    // 左
+    const q = (inst >>> 14) & 0b111111;
+    // 右
+    const r = (inst >>> 8) & 0b111111;
+
+    registers.setf(p, func(registers.getf(q), registers.getf(r)));
+}
 // FPU 即値 operation
 function opif(inst: number, registers: Registers, func: (x: number, y: number)=>number): void{
     const p = (inst >>> 20) & 0b111111;
     const q = (inst >>> 14) & 0b111111;
     const imm = (inst & 0x3fff) << 18;
 
-    registers.set(p, func(registers.get(q), imm));
+    registers.setf(p, func(registers.getf(q), bytesFloat(imm)));
 }
 
 // Init a register.
