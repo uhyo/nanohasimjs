@@ -20,7 +20,7 @@ import {
     instName,
 } from './util';
 
-interface State{
+export interface State{
     stdin: StdinBuf,
     memory: Uint32Array;
     registers: Registers,
@@ -29,7 +29,7 @@ interface State{
     end: boolean;
 }
 
-export async function main(file: Buffer): Promise<void>{
+export async function main(file: Buffer): Promise<State>{
     const memory = new Uint32Array(1048576);
     // メモリを生成
     for (let i = 0; i < file.length / 4; i++){
@@ -54,6 +54,7 @@ export async function main(file: Buffer): Promise<void>{
         // console.error('waiting for input');
         await state.stdin.wait();
     }
+    return state;
 }
 
 // Main loop.
@@ -83,7 +84,7 @@ function mainLoop(state: State): void{
         // 上位6bitがopcode
         const opcode = inst >>> 26;
         if (start <= total && total % step === 0){
-            console.error(`${total}: ${pc}: ${opcode} r1=${registers.get(1)} r2=${registers.get(2)} r3=${registers.get(3)} r6=${registers.get(6)} r10=${registers.get(10)} r30=${registers.get(30)} r63=${registers.get(63)} mem24584=${memory[24584]}`);
+            console.error(`${total}: ${pc}`);
             if (total >= end){
                 process.exit(0);
             }
